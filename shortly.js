@@ -2,39 +2,91 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
-
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
-
 var bcrypt = require('bcrypt-nodejs');
-
 var app = express();
+var session = require('express-session');
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
+
+//###Middleware###
+
 app.use(partials());
 // Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }}));
 
+//###End middleware###
 
 app.get('/', function(req, res) {
-  res.redirect('login');
+  res.render('index');
+  // res.redirect('/login');
 });
 
 app.get('/login', function(req, res) {
   res.render('login');
 });
 
+var authenticate = function(username, password, cb) {
+  new User({
+    username: username
+  })
+  .fetch()
+  .then(function(found) {
+    found = found.attributes;
+    if (found) {
+      return new Promise(function(resolve, reject) {
+        bcrypt.hash(password, found.salt, null, function(err, hash) {
+          console.log('made new hash', hash);
+          if (err) {
+            reject(err);
+          } else {
+            if (hash === found.password) {
+              resolve(found);
+            } else {
+              resolve(new Error('Login Failed.'));
+            }
+          }
+        }); 
+      })
+      .then(function(found) {
+        cb(null, found.username);
+      })
+      .catch(function(err) { cb(err); });
+
+    } else {
+      cb(err);
+    }
+  });
+};
+
 app.post('/login', function(req, res) {
-  res.status(201);
+
+  authenticate(req.body.username, req.body.password, function(err, user) {
+    console.log('user', user);
+    if (user) {
+      console.log('user logged in');
+      //set a token
+      req.session.regenerate(function() {
+        req.session.user = user;
+        res.redirect('links');
+      });
+    } else {
+      console.log('login failed');
+      res.status(404);
+      res.redirect('login');
+    }
+  });
+
 });
 
 app.get('/create', function(req, res) {
@@ -43,10 +95,10 @@ app.get('/create', function(req, res) {
 });
 
 app.get('/links', function(req, res) {
-  res.redirect('login');
-  // Links.reset().fetch().then(function(links) {
-  //   res.status(200).send(links.models);
-  // });
+  // res.redirect('login');
+  Links.reset().fetch().then(function(links) {
+    res.status(200).send(links.models);
+  });
 });
 
 app.post('/links', 
@@ -85,12 +137,10 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 app.get('/signup', function(req, res) {
-  // console.log(req.body);
   res.render('signup');
 });
 
 app.post('/signup', function(req, res) {
-  // console.log(req.body);
   var username = req.body.username;
   var password = req.body.password;
 
@@ -108,8 +158,8 @@ app.post('/signup', function(req, res) {
       })
       .save()
       .then(function() {
+        // res.send(JSON.stringify({'username': username}));
         res.redirect('/');
-        res.send(JSON.stringify({'username': username}));
       });
       // res.send(`Account ${username} successfully created!`);
     }
