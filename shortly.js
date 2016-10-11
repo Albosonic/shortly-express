@@ -11,6 +11,8 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
+var bcrypt = require('bcrypt-nodejs');
+
 var app = express();
 
 app.set('views', __dirname + '/views');
@@ -23,18 +25,25 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
-function(req, res) {
-  res.render('index');
+app.get('/', function(req, res) {
+  res.redirect('login');
 });
 
-app.get('/create', 
-function(req, res) {
-  res.render('index');
+app.get('/login', function(req, res) {
+  res.render('login');
 });
 
-app.get('/links', 
-function(req, res) {
+app.post('/login', function(req, res) {
+  res.status(201);
+});
+
+app.get('/create', function(req, res) {
+  res.redirect('login');
+  // res.render('index');
+});
+
+app.get('/links', function(req, res) {
+  // res.redirect('login');
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
@@ -75,7 +84,32 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+app.get('/signup', function(req, res) {
+  // console.log(req.body);
+  res.render('signup');
+});
 
+app.post('/signup', function(req, res) {
+  // console.log(req.body);
+  var username = req.body.username;
+  var password = req.body.password;
+  new User({
+    username: username,
+    password: password
+    //send salt?
+  })
+  .save()
+  .then(function(model) {
+    console.log(model);
+    new User({username: username})
+    .fetch()
+    .then(function(foundObj) {
+      console.log(foundObj);
+    });
+  });
+
+  
+});
 
 
 /************************************************************/
