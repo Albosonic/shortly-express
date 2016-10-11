@@ -4,9 +4,9 @@ var Promise = require('bluebird');
 
 
 var User = db.Model.extend({
-  tablename: 'users',
+  tableName: 'users',
   initialize: function() {
-    this.on('create', this.hashPassword, this);
+    this.on('creating', this.hashPassword, this);
   },
   hashPassword: function(model, attr, options) {
     return new Promise(function(resolve, reject) {
@@ -20,7 +20,7 @@ var User = db.Model.extend({
     })
     .then(function(salt) {
       return new Promise(function(resolve, reject) {
-        bcrypt.hash(model.attributes.password, salt, function(err, hash) {
+        bcrypt.hash(model.attributes.password, salt, null, function(err, hash) {
           if (err) {
             reject(err);
           } else {
@@ -31,7 +31,7 @@ var User = db.Model.extend({
         });
       });
     })
-    .catch(console.log.bind(console));
+    .catch(function(err) { console.log('OOPS', err); });
   }
 });
 

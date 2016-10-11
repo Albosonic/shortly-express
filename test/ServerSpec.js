@@ -254,9 +254,11 @@ describe('', function() {
         db.knex('users')
           .where('username', '=', 'Svnh')
           .then(function(res) {
+            console.log('res', res);
             if (res[0] && res[0]['username']) {
               var user = res[0]['username'];
             }
+            console.log('res', res);
             expect(user).to.equal('Svnh');
             done();
           }).catch(function(err) {

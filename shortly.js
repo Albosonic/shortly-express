@@ -43,10 +43,10 @@ app.get('/create', function(req, res) {
 });
 
 app.get('/links', function(req, res) {
-  // res.redirect('login');
-  Links.reset().fetch().then(function(links) {
-    res.status(200).send(links.models);
-  });
+  res.redirect('login');
+  // Links.reset().fetch().then(function(links) {
+  //   res.status(200).send(links.models);
+  // });
 });
 
 app.post('/links', 
@@ -93,24 +93,31 @@ app.post('/signup', function(req, res) {
   // console.log(req.body);
   var username = req.body.username;
   var password = req.body.password;
-  new User({
-    username: username,
-    password: password
-    //send salt?
-  })
-  .save()
-  .then(function(model) {
-    console.log(model);
-    new User({username: username})
-    .fetch()
-    .then(function(foundObj) {
-      console.log(foundObj);
-    });
-  });
 
-  
+  new User({
+    'username': username
+  })
+  .fetch()
+  .then(function(found) {
+    if (found) {
+      res.sendStatus(404);
+    } else {
+      new User({
+        'username': username,
+        'password': password
+      })
+      .save()
+      .then(function() {
+        res.redirect('/');
+        res.send(JSON.stringify({'username': username}));
+      });
+      // res.send(`Account ${username} successfully created!`);
+    }
+  });
 });
 
+
+  
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
