@@ -27,6 +27,7 @@ app.use(session({ secret: 'keyboard cat', resave: true, saveUninitialized: true,
 
 //###End middleware###
 
+var PORT = process.env.port;
 
 var authenticate = function(username, password, cb) {
   new User({
@@ -210,4 +211,4 @@ app.get('/*', function(req, res) {
 });
 
 console.log('Shortly is listening on 4568');
-app.listen(4568);
+app.listen(PORT);
