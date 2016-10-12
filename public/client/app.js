@@ -3,7 +3,8 @@ window.Shortly = Backbone.View.extend({
 
   events: {
     'click li a.index': 'renderIndexView',
-    'click li a.create': 'renderCreateView'
+    'click li a.create': 'renderCreateView',
+    'click li a.logout': 'logout'
   },
 
   initialize: function() {
@@ -28,7 +29,11 @@ window.Shortly = Backbone.View.extend({
 
   renderCreateView: function(e) {
     e && e.preventDefault();
-    this.router.navigate('/create', { trigger: true });
+    if (document.cookie) {
+      this.router.navigate('/create', { trigger: true });
+    } else {
+      window.location = '/login';
+    }
   },
 
   updateNav: function(routeName) {
@@ -36,5 +41,9 @@ window.Shortly = Backbone.View.extend({
       .removeClass('selected')
       .filter('.' + routeName)
       .addClass('selected');
+  },
+  
+  logout: function () {
+    window.location = '/logout';
   }
 });

@@ -4,6 +4,7 @@
   <ul>
     <li><a href='#' class='index'>All Links</a></li>
     <li><a href='#' class='create'>Shorten</a></li>
+    <li><a href='#' class='logout'>Logout</a></li>
   </ul>
   </div>
   <div id='container'></div>
@@ -20,6 +21,7 @@
 </script>
 
 <script id='create' type='text/x-handlebars-template'>
+
   <form>
       <input class='text' type='text' name='url'>
       <input type='submit' value='Shorten'>
@@ -30,7 +32,7 @@
 
 <script>
   window.Templates = {};
-  $('[type="text/x-handlebars-template"]').each(function(index, div){
+  $('[type="text/x-handlebars-template"]').each(function(index, div) {
     Templates[div.id] = Handlebars.compile(div.innerHTML);
   });
 </script>

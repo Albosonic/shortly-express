@@ -23,18 +23,10 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
-app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }}));
+app.use(session({ secret: 'keyboard cat', resave: true, saveUninitialized: true, cookie: { maxAge: 60000 }}));
 
 //###End middleware###
 
-app.get('/', function(req, res) {
-  res.render('index');
-  // res.redirect('/login');
-});
-
-app.get('/login', function(req, res) {
-  res.render('login');
-});
 
 var authenticate = function(username, password, cb) {
   new User({
@@ -46,7 +38,6 @@ var authenticate = function(username, password, cb) {
     if (found) {
       return new Promise(function(resolve, reject) {
         bcrypt.hash(password, found.salt, null, function(err, hash) {
-          console.log('made new hash', hash);
           if (err) {
             reject(err);
           } else {
@@ -69,8 +60,26 @@ var authenticate = function(username, password, cb) {
   });
 };
 
-app.post('/login', function(req, res) {
+var restrict = function(req, res, next) {
+  // console.log('checking restrict', req.session);
+  console.log(req.method, ' request to', req.url);
+  if (!req.session.user) {
+    return res.redirect('login');
+  } else {
+    next();
+  }
+};
 
+app.get('/', function(req, res) {
+  res.render('index');
+});
+
+app.get('/login', function(req, res) {
+  res.render('login');
+});
+
+
+app.post('/login', function(req, res) {
   authenticate(req.body.username, req.body.password, function(err, user) {
     console.log('user', user);
     if (user) {
@@ -78,7 +87,7 @@ app.post('/login', function(req, res) {
       //set a token
       req.session.regenerate(function() {
         req.session.user = user;
-        res.redirect('links');
+        res.redirect('index');
       });
     } else {
       console.log('login failed');
@@ -89,22 +98,28 @@ app.post('/login', function(req, res) {
 
 });
 
-app.get('/create', function(req, res) {
+app.get('/create', restrict, function(req, res) {
   res.redirect('login');
-  // res.render('index');
 });
 
 app.get('/links', function(req, res) {
-  // res.redirect('login');
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
 });
 
-app.post('/links', 
-function(req, res) {
-  var uri = req.body.url;
+app.get('/logout', function(req, res) {
+  console.log('Logging out...', req.session);
+  req.session.user = '';
+  res.redirect('login');
+});
 
+app.post('/links', restrict, function(req, res) {  
+  var uri = req.body.url;
+  if (!req.session.user) {
+    res.send({redirect: '/login'});
+    return;
+  } 
   if (!util.isValidUrl(uri)) {
     console.log('Not a valid url: ', uri);
     return res.sendStatus(404);
